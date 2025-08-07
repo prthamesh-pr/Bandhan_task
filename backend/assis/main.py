@@ -8,12 +8,23 @@ import os
 
 app = Flask(__name__)
 
-# Configure CORS with specific settings for production
+# Configure CORS with explicit settings for cross-origin requests
 CORS(app, 
-     origins=['*'],  # Allow all origins for now
+     origins=['*'],  # Allow all origins
      methods=['GET', 'POST', 'OPTIONS'],
-     allow_headers=['Content-Type', 'Authorization'],
-     supports_credentials=False)
+     allow_headers=['Content-Type', 'Authorization', 'Accept', 'Origin', 'X-Requested-With'],
+     supports_credentials=False,
+     send_wildcard=True,
+     expose_headers=['Content-Type', 'Access-Control-Allow-Origin'])
+
+# Additional CORS headers as fallback
+@app.after_request
+def after_request(response):
+    response.headers.add('Access-Control-Allow-Origin', '*')
+    response.headers.add('Access-Control-Allow-Headers', 'Content-Type,Authorization,Accept,Origin,X-Requested-With')
+    response.headers.add('Access-Control-Allow-Methods', 'GET,PUT,POST,DELETE,OPTIONS')
+    response.headers.add('Access-Control-Allow-Credentials', 'false')
+    return response
 
 # Load YOLOv8 model
 model = YOLO("yolov8n.pt")
@@ -68,7 +79,8 @@ def predict():
         response = jsonify({'status': 'ok'})
         response.headers.add('Access-Control-Allow-Origin', '*')
         response.headers.add('Access-Control-Allow-Methods', 'GET, POST, OPTIONS')
-        response.headers.add('Access-Control-Allow-Headers', 'Content-Type, Authorization')
+        response.headers.add('Access-Control-Allow-Headers', 'Content-Type, Authorization, Accept, Origin, X-Requested-With')
+        response.headers.add('Access-Control-Max-Age', '86400')  # Cache preflight for 24 hours
         return response
     
     try:
