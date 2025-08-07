@@ -21,7 +21,7 @@ class ObjectDetectionService {
   // Replace with the actual API URL from the YOLOv8 Flask API
   // Based on the provided repository: https://github.com/PlanetDestroyyer/assis
   // For testing purposes, we'll use a mock endpoint that will fail and return mock data
-  static const String baseUrl = 'https://mock-yolo-api.example.com';
+  static const String baseUrl = 'https://bandhan-task.onrender.com';
   static const String predictEndpoint = '/predict';
 
   Future<List<DetectionResult>> detectObjects(XFile imageFile) async {
