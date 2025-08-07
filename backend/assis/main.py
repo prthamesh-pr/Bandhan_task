@@ -57,15 +57,19 @@ def health_check():
 
 @app.route("/predict", methods=["POST"])
 def predict():
-    if "file" in request.files:
-        image = read_image_from_file(request.files["file"])
-    elif "url" in request.json:
-        image = read_image_from_url(request.json["url"])
-    else:
-        return jsonify({"error": "No image provided. Send 'file' or 'url'."}), 400
+    try:
+        if "file" in request.files:
+            image = read_image_from_file(request.files["file"])
+        elif request.is_json and "url" in request.json:
+            image = read_image_from_url(request.json["url"])
+        else:
+            return jsonify({"error": "No image provided. Send 'file' or 'url' in JSON."}), 400
 
-    detections = predict_objects(image)
-    return jsonify(detections)
+        detections = predict_objects(image)
+        return jsonify(detections)
+    
+    except Exception as e:
+        return jsonify({"error": f"Processing failed: {str(e)}"}), 500
 
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))

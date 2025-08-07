@@ -25,7 +25,7 @@ Fill in the following settings:
 
 **Build & Deploy Settings:**
 - **Build Command**: `pip install -r requirements.txt`
-- **Start Command**: `python main.py`
+- **Start Command**: `python -m gunicorn --bind 0.0.0.0:$PORT main:app --timeout 120 --workers 1`
 
 **Advanced Settings:**
 - **Auto-Deploy**: Yes
