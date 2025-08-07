@@ -91,7 +91,25 @@ curl -X POST https://your-service-name.onrender.com/predict \
 
 Your service is configured for automatic deployment. Every push to the `main` branch will trigger a new deployment.
 
-### 📊 Monitor Your Deployment
+### � Troubleshooting Common Issues
+
+#### 1. "gunicorn: command not found"
+**Fixed!** This was resolved by:
+- Adding `gunicorn` to requirements.txt
+- Using `python -m gunicorn` in start commands
+- Configuring proper timeout settings for model loading
+
+#### 2. "Model loading timeout"
+The YOLOv8n model (~6.25MB) downloads on first deployment. If timeout occurs:
+- Check deployment logs for download progress
+- The configuration includes `--timeout 120` for extended loading time
+
+#### 3. "Port binding issues"
+Render automatically provides `$PORT` environment variable:
+- Start command uses `--bind 0.0.0.0:$PORT`
+- Flask fallback uses `os.environ.get("PORT", 5000)`
+
+### �📊 Monitor Your Deployment
 
 - **Render Dashboard**: Monitor performance, logs, and metrics
 - **Health Check**: Regularly check the health endpoint
