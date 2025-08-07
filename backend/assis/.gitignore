@@ -8,3 +8,14 @@ wheels/
 
 # Virtual environments
 .venv
+
+# YOLO model files (will be downloaded at runtime)
+*.pt
+
+# IDE files
+.vscode/
+.idea/
+
+# OS files
+.DS_Store
+Thumbs.db

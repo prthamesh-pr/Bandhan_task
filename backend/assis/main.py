@@ -1,4 +1,5 @@
 from flask import Flask, request, jsonify
+from flask_cors import CORS
 from ultralytics import YOLO
 import cv2
 import numpy as np
@@ -6,6 +7,7 @@ import requests
 import os
 
 app = Flask(__name__)
+CORS(app)  # Enable CORS for all routes
 
 # Load YOLOv8 model
 model = YOLO("yolov8n.pt")
@@ -42,6 +44,17 @@ def predict_objects(image):
             })
     return json_output
 
+@app.route("/", methods=["GET"])
+def health_check():
+    return jsonify({
+        "status": "healthy",
+        "message": "Bandhan Object Detection API is running",
+        "model": "YOLOv8n",
+        "endpoints": {
+            "predict": "/predict"
+        }
+    })
+
 @app.route("/predict", methods=["POST"])
 def predict():
     if "file" in request.files:
@@ -55,4 +68,5 @@ def predict():
     return jsonify(detections)
 
 if __name__ == "__main__":
-    app.run(debug=True)
+    port = int(os.environ.get("PORT", 5000))
+    app.run(debug=False, host="0.0.0.0", port=port)
