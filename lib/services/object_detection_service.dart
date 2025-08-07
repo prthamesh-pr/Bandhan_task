@@ -34,8 +34,13 @@ class ObjectDetectionService {
         Uri.parse('$baseUrl$predictEndpoint'),
       );
 
-      // Add headers
-      request.headers.addAll({'Content-Type': 'multipart/form-data'});
+      // Add headers for CORS
+      request.headers.addAll({
+        'Content-Type': 'multipart/form-data',
+        'Access-Control-Allow-Origin': '*',
+        'Access-Control-Allow-Methods': 'POST, GET, OPTIONS',
+        'Access-Control-Allow-Headers': 'Content-Type',
+      });
 
       // Add the image file to the request
       if (kIsWeb) {
@@ -61,9 +66,55 @@ class ObjectDetectionService {
 
       debugPrint('Sending request to: $baseUrl$predictEndpoint');
 
-      // Send the request
-      var response = await request.send();
-      var responseBody = await response.stream.bytesToString();
+      // Send the request with retry logic for cold starts
+      http.StreamedResponse? response;
+      String responseBody = '';
+      
+      try {
+        response = await request.send().timeout(
+          const Duration(seconds: 120), // Extended timeout for cold starts
+        );
+        responseBody = await response.stream.bytesToString();
+      } catch (e) {
+        debugPrint('First request failed (likely cold start): $e');
+        debugPrint('Retrying in 5 seconds...');
+        
+        // Wait and retry once for cold starts
+        await Future.delayed(const Duration(seconds: 5));
+        
+        // Recreate request for retry
+        var retryRequest = http.MultipartRequest(
+          'POST',
+          Uri.parse('$baseUrl$predictEndpoint'),
+        );
+        
+        retryRequest.headers.addAll({
+          'Content-Type': 'multipart/form-data',
+          'Access-Control-Allow-Origin': '*',
+          'Access-Control-Allow-Methods': 'POST, GET, OPTIONS',
+          'Access-Control-Allow-Headers': 'Content-Type',
+        });
+        
+        if (kIsWeb) {
+          var bytes = await imageFile.readAsBytes();
+          retryRequest.files.add(
+            http.MultipartFile.fromBytes('file', bytes, filename: imageFile.name),
+          );
+        } else {
+          retryRequest.files.add(
+            await http.MultipartFile.fromPath(
+              'image',
+              imageFile.path,
+              filename: imageFile.name,
+            ),
+          );
+        }
+        
+        response = await retryRequest.send().timeout(
+          const Duration(seconds: 120),
+        );
+        responseBody = await response.stream.bytesToString();
+      }
 
       debugPrint('API Response Status: ${response.statusCode}');
       debugPrint('API Response Body: $responseBody');

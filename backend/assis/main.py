@@ -7,7 +7,13 @@ import requests
 import os
 
 app = Flask(__name__)
-CORS(app)  # Enable CORS for all routes
+
+# Configure CORS with specific settings for production
+CORS(app, 
+     origins=['*'],  # Allow all origins for now
+     methods=['GET', 'POST', 'OPTIONS'],
+     allow_headers=['Content-Type', 'Authorization'],
+     supports_credentials=False)
 
 # Load YOLOv8 model
 model = YOLO("yolov8n.pt")
@@ -55,8 +61,16 @@ def health_check():
         }
     })
 
-@app.route("/predict", methods=["POST"])
+@app.route("/predict", methods=["POST", "OPTIONS"])
 def predict():
+    # Handle preflight OPTIONS request
+    if request.method == 'OPTIONS':
+        response = jsonify({'status': 'ok'})
+        response.headers.add('Access-Control-Allow-Origin', '*')
+        response.headers.add('Access-Control-Allow-Methods', 'GET, POST, OPTIONS')
+        response.headers.add('Access-Control-Allow-Headers', 'Content-Type, Authorization')
+        return response
+    
     try:
         if "file" in request.files:
             image = read_image_from_file(request.files["file"])
